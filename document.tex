@@ -608,11 +608,28 @@ TCP, congestion avoidance, bufferbloat, delay
 % You must have at least 2 lines in the paragraph with the drop letter
 % (should never be an issue)
 
-\IEEEPARstart{T}{his} is a very nice introduction introducing the topics that will be covered in the paper. And this \cite{barcelo2008lba} is a reference to the best paper ever written..
+\IEEEPARstart{}{} is a very nice introduction introducing the topics that will be covered in the paper. And this \cite{barcelo2008lba} is a reference to the best paper ever written..
 
-\section{Keeping the backoff value after successes}
+\section{Operating in TCPs sweet point}
 
-Isn't Fig. \ref{fig:csma_eca_compact} beautiful?
+Fig.~\ref{delay-throughput-vs-flight} is a copy from \cite{gettys2011bdb} and explain the behaviour of TCP as a function of the number of packets in-flight.
+If the number of packets is too low, the link is not efficiently used.
+If it is too high, it fills up the buffer preceding the bottleneck link and increases the end-to-end delay.
+
+TCP behaviour is to increase the number of packets in-flight as long as no packet loss occurs.
+Roughly speaking, the number of packets in flight increases by one every RTT.
+This means that, unless Random Early Detection is used, TCP has a tendency to fill the buffer that precedes the bottleneck link and therefore unnecessarily increasing the delay of all the flows that traverse such link.
+
+The problem is that correctly configuring RED is not trivial.
+If it is too aggressive, tcp slows down to a point in which the link is not efficiently used.
+If RED is too quiescent, the queue builds up and results excessive delays.
+
+We propose changing the mechanism that adjusts the congestion window mechanism in the congestion avoidance phase.
+Instead of blindly growing the congestion window until a packet loss occurs, we suggest to increase the congestion as long as it results in performance benefits.
+When a performance loss is detected, probably in the form of same throughput and higher delay, TCP will start decreasing the congestion window.
+And it will keep decreasing it as long as this behaviour results in a performance gain.
+When decreasing the window results in a performance loss, TCP will revert to increasing.
+This mechanism will force TCP to operate in the sweet point where the throughput is maximum and the delay minimum.
 
 \begin{figure}
   \centering
@@ -620,10 +637,6 @@ Isn't Fig. \ref{fig:csma_eca_compact} beautiful?
   \caption{Typical delay and throughput curves as a function of the size of the congestion window.}
   \label{fig: delay-throughput-vs-flight}
 \end{figure}
-
-\section{Simulation results}
-
-\section{Multiple Readings Scenario}
 
 \section{Conclusion}
 
