@@ -648,7 +648,10 @@ This mechanism will force TCP to operate around the sweet point where the throug
 The idea is to take measures of throughput and delay every RTT.
 We name these measures $T_i$ and $D_i$ where the $T$ stands for throughput and the $D$ for delay.
 The integer $i$ is an index.
-Then we compute the relative variation of throughput and delay as $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$ and  $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$, respectively.
+Note that TCP already computes an estimation of the RTT which is can be used for $D_i$.
+To estimate $T_i$ it would be necessary to compute the amount of acknowledged data during the RTT.
+
+After obtaining the measures $T_i$ and $D_i$, we compute the relative variation of throughput and delay as $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$ and  $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$, respectively.
 Finally, we measure the performance improvement as $PIMP=T_{rv}-D_{rv}$.
 
 Note that if the current operation point is at the left of the dashed line in Fig.~\ref{fig:delay-throughput-vs-flight} and we increase the congestion window (we move to the right) we measure a positive performance improvement.
@@ -660,26 +663,36 @@ We can use these properties to control whether TCP should increase or decrease t
 The behaviour of the current TCP every RTT is $CWND_i = CWND_{i-1} + MSS$ whenever there is no packet loss.
 It always increases as long as there is no packet loss.
 
-We suggest $CWND_i = CWND_{i-1} + STAT*MSS$ where $STAT_i$ stands for state and can be 1 or -1.
+We suggest to update $CWND$ as $CWND_i = CWND_{i-1} + STAT_i*MSS$ where $STAT_i$ stands for state and can be 1 or -1.
 The $CWND$ increases when $STAT_i$ is positive and decreases when $STAT_i$ is negative.
 $STAT$ keeps the same value as long as there are performance improvements, and changes its value when there is a performance loss:  $STAT_i = SIGN(PIMP)*STAT_{i-1}$.
 
+The following algorithm summarizes all the steps necessary to update $CWND$.
 \begin{algorithmic}
-\STATE $V\gets$ AllUnigramsInTraining($D$)
-\STATE $N\gets$ NumberOfTweets($D$)
- \FORALL{$c \in C$}
-  \STATE $N_c \gets$ Number of tweets in Class $c$
-  \STATE \begin{equation}prior(c) = \frac{N_c}{N}\end{equation}
-  \STATE $Tweets_c \gets $All Tweets in class $c$
-  \FORALL{$t \in V$}
-    \STATE $T_ct$ = No. of times term $t$ appeared in $Tweets_c$
-  \ENDFOR
-  \FORALL{$t \in V$}
-    \STATE \begin{equation}prob[t][c] = \frac{T_ct}{\sum^{t'}T_ct'+ 1}\end{equation}
-  \ENDFOR
-\ENDFOR
+\STATE Entering congestion avoidance ...
+\STATE $STAT_0\gets 1$ 
+\STATE Measure $T_0$ and $D_0$
+\STATE $i\gets 1$ 
+\WHILE{ no packet loss}
+    \STATE Measure $T_i$ and $D_i$
+    \STATE Compute $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$
+    \STATE Compute $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$`
+    \STATE Compute $PIMP=T_{rv}-D_{rv}$
+    \STATE Compute $STAT_i = SIGN(PIMP)*STAT_{i-1}$
+    \STATE Compute $CWND_i = CWND_{i-1} + STAT_i*MSS$ 
+    \STATE $i\gets i + 1$
+\ENDWHILE
 \end{algorithmic}
 
+\section{Slow Start}
+
+The exponential growth of slow start should be maintained as long as the performance improvement stays positive.
+A negative performance improvement should move TCP to congestion avoidance.
+
+\section{Packet Loss}
+
+Sweet TCP should react to packet loss just like current TCP.
+The congestion window should be halved in the case of fast recovery and TCP should move back to the slow start in case of timeout.
 
 \section{Conclusion}
 
