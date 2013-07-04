@@ -635,8 +635,30 @@ This mechanism will force TCP to operate in the sweet point where the throughput
   \centering
   \includegraphics[width=2.5in]{figures/delay-throughput-vs-flight}
   \caption{Typical delay and throughput curves as a function of the size of the congestion window.}
-  \label{fig: delay-throughput-vs-flight}
+  \label{fig:delay-throughput-vs-flight}
 \end{figure}
+
+The idea is to take measures of throughput and delay every RTT.
+We name this measures $T_i$ and $D_i$ where the $T$ stands for throughput and the $D$ for delay.
+The integer $i$ is an index.
+Then we compute the relative variation of throughput and delay as $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$ and  $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$, respectively.
+Finally, we measure the performance improvement as $PIMP=T_{rv}-D_{rv}$.
+
+Note that if the current operation point is at the left of the dashed line in Fig.~\ref{fig:delay-throughput-vs-flight} and we increase the congestion window (we move to the left) we measure a positive performance improvement.
+Similarly, it the current operation point is at the left of the dashed line and we reduce the congestion window (we move to the right), we also measure a positive performance improvement.
+The performance improvement is positive whenever we move closer to the optimal operation point.
+Conversely, the performance improvement is negative whenever we move further of the operation point.
+
+We can use these properties to control whether TCP should increase or decrease the congestion window.
+The behaviour of the current TCP every RTT is $CWND_i = CWND_{i-1} + MSS$ whenever there is no packet loss.
+It always increases as long as there is no packet loss.
+
+We suggest $CWND_i = CWND_{i-1} + STAT*MSS$ where $STAT$ stands for state and can be 1 or -1.
+The $CWND$ increases when $STAT$ is positive and decreases when $STAT$ is negative.
+$STAT$ is simply the sign of the previously defined performance improvement $STAT = SIGN(PIMP)$.
+
+
+
 
 \section{Conclusion}
 
