@@ -550,7 +550,7 @@ This problem is known in the literature as bufferbloat.
 In this paper, we make use of some of the insights developed by the community around the bufferbloat problem to propose a TCP congestion avoidance protocol that fills in the pipe but not the buffer.
 By continuously monitoring improvements and losses in terms of throughput and delay, Sweet TCP finds and stabilizes around the optimum operation point that simultaneously maximizes the throughput and minimizes the delay.
 A simple algorithm that adjusts the contention window is proposed.
-In contrast with traditional congestion avoidance behaviour, the proposed algorithm reduces the congestion window as soon as symptoms of buffer build up are detected, and increases the congestion window as soon as the symptoms disappear.
+In contrast with traditional congestion avoidance behaviour, the proposed algorithm reduces the congestion window as soon as symptoms of bufferbloat are detected, and increases the congestion window as soon as the symptoms disappear.
 \end{abstract}
 % IEEEtran.cls defaults to using nonbold math in the Abstract.
 % This preserves the distinction between vectors and scalars. However,
@@ -608,9 +608,9 @@ TCP, congestion avoidance, bufferbloat, delay
 
 \IEEEPARstart{M}{any} Internet communications use the Transfer Control Protocol (TCP).
 Fig.~\ref{fig:delay-throughput-vs-flight} is a copy from \cite{gettys2011bdb} and explains the behaviour of TCP as a function of the number of packets in-flight.
-The number of packets in flight is closely related to the TCP congestion window ($CWND$) which limits the number of bytes in-flight.
+The number of packets in-flight is closely related to the TCP congestion window ($CWND$) which limits the number of bytes in-flight.
 If the number of packets in-flight is too low, the link is not efficiently used.
-If it is too high, it fills up the buffer preceding the bottleneck link and increases the end-to-end delay.
+If it is too high, the packets accumulate in the buffer preceding the bottleneck link and the end-to-end delay increases.
 
 In the figure we can observe that the behaviour of TCP presents a sweet point in which throughput is maximised and delay is minimised.
 If the current operation point is to the left of the optimal, the congestion window should be increased.
@@ -619,21 +619,21 @@ We try to devise a simple mechanism that can accomplish this goal.
 
 The assumption is that every round-trip-time (RTT) we have access to an estimation of the delay and throughput and should take a decision about whether the congestion window should be increased or decreased.
 Using a single sample of delay and throughput it is difficult to decide whether TCP is operating at the left or the right of the sweet point.
-Therefore the strategy is to move along the horizontal axis in the figure by increasing or decreasing the number of packets in flight, and then decide whether we are moving in the right direction or not.
+Therefore the strategy is to move along the horizontal axis in the figure by increasing or decreasing the number of packets in-flight, and then decide whether we are moving in the right direction or not.
 
 In a completely ideal situation in which the TCP behaviour was exactly as represented in the figure, an increase in throughput or a decrease in delay would mean a move in the right direction.
 A decrease in throughput or an increase in delay would mean a move in the wrong direction.
 In a real dynamic network, it is not realistic to expect a behaviour that exactly mimics the idealized Fig.~\ref{fig:delay-throughput-vs-flight}.
-For this reason we propose an algorithm that could be robust enough for a real environment.
+For this reason we propose an algorithm that takes into account both delay and throughput for additional robustness.
 
 \section{Operating in TCP's Sweet Point}
 
 The current TCP behaviour is to increase the number of packets in-flight as long as no packet loss occurs.
-Roughly speaking, the number of packets in flight increases by one every RTT.
+Roughly speaking, the number of packets in-flight increases by one every RTT.
 This means that, unless Random Early Detection is used, TCP has a tendency to fill the buffer that precedes the bottleneck link and therefore unnecessarily increase the delay of all the flows that traverse such link.
 
 The problem is that correctly configuring RED is not trivial.
-If it is too aggressive, TCP slows down to a point in which the link is not efficiently used.
+If RED is too aggressive, TCP slows down to a point in which the link is not efficiently used.
 If RED is too quiescent, the queue builds up and the delays are too high.
 
 We propose changing the mechanism that adjusts the congestion window mechanism in the congestion avoidance phase of TCP.
@@ -714,6 +714,10 @@ The congestion window should be halved in the case of fast recovery and TCP shou
 
 \section{Conclusion}
 
+Sweet TCP increases and decreases the congestion window while in the congestion avoidance mode to try to reach the point in which the throughput is maximised and the delay is minimized.
+This mechanisms avoids that bottleneck buffer is completely filled.
+In order to decide when to increase or decrease the congestion window, TCP has to keep track of the delay and throughput measured every RTT.
+
 
 
 
@@ -770,7 +774,7 @@ The congestion window should be halved in the case of fast recovery and TCP shou
 % use section* for acknowledgement
 \section*{Acknowledgment}
 
-Thanks to ...
+Thanks to Adria Villalba for suggesting to move the operation of TCP to the sweet point.
 
 
 % Can use something like this to put references on a page
