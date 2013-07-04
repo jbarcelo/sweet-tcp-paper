@@ -640,6 +640,7 @@ We propose changing the mechanism that adjusts the congestion window mechanism i
 Instead of blindly growing the congestion window until a packet loss occurs, we suggest to increase the congestion as long as it results in performance benefits.
 In other words, assuming that TCP starts at some point to the left of the optimal, the idea is to move to the right towards the sweet point. 
 
+While the point of operation is moved to the right by increasing the congestion window, the values of throughput and delay are monitored every RTT.
 When a performance loss is detected, probably in the form of same throughput and higher delay, TCP will start decreasing the congestion window.
 This is, when the sweet point has been crossed and moving to the right only increases the delay and does not offer throughput benefits, we start moving to the left.
 If this decrease results in a performance gain, probably in the form of same throughput and lower delay, TCP will continue decreasing the congestion window.
@@ -650,31 +651,38 @@ This mechanism will force TCP to operate around the sweet point where the throug
 \begin{figure}
   \centering
   \includegraphics[width=2.5in]{figures/delay-throughput-vs-flight}
-  \caption{Typical delay and throughput curves as a function of the number of packets in-flights. This number is closely related to the congestion window size $CWND$.}
+  \caption{Typical delay and throughput curves as a function of the number of packets in-flight. This number is closely related to the congestion window size $CWND$.}
   \label{fig:delay-throughput-vs-flight}
 \end{figure}
 
 The idea is to take measures of throughput and delay every RTT.
-We name these measures $T_i$ and $D_i$ where the $T$ stands for throughput and the $D$ for delay.
-The integer $i$ is an index.
-Note that TCP already computes an estimation of the RTT which is can be used for $D_i$.
+We name these measures $T_i$ and $D_i$ where $T$ stands for throughput and $D$ for delay.
+The integer $i$ is an index that increases every RTT.
+Note that TCP already computes an estimation of the RTT which can be used for $D_i$.
 To estimate $T_i$ it would be necessary to compute the amount of acknowledged data during the RTT.
 
 After obtaining the measures $T_i$ and $D_i$, we compute the relative variation of throughput and delay as $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$ and  $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$, respectively.
 Finally, we measure the performance improvement as $PIMP=T_{rv}-D_{rv}$.
+%By taking into account the relative variance of both delay and throughput we add some extra robustness to the system.
+%If the delay increases by 1\% and the throughput by 10\%, TCP will interpret it as a good result.
 
-Note that if the current operation point is at the left of the dashed line in Fig.~\ref{fig:delay-throughput-vs-flight} and we increase the congestion window (we move to the right) we measure a positive performance improvement.
-Similarly, if the current operation point is at the right of the dashed line and we reduce the congestion window (we move to the left), we also measure a positive performance improvement.
+Note that if the current operation point is at the left of the dashed line in Fig.~\ref{fig:delay-throughput-vs-flight} and we increase the congestion window (we move to the right), the throughput increases and the delay stays the same.
+Therefore we measure a positive performance improvement.
+Similarly, if the current operation point is at the right of the dashed line and we reduce the congestion window (we move to the left), the throughput stays the same and the delay decreases.
+Therefore we also measure a positive performance improvement.
 The performance improvement is positive whenever we move closer to the optimal operation point.
-Conversely, the performance improvement is negative whenever we move further of the operation point.
+Conversely, the performance improvement is negative whenever we move away from the operation point.
 
 We can use these properties to control whether TCP should increase or decrease the congestion window.
-The behaviour of the current TCP every RTT is $CWND_i = CWND_{i-1} + MSS$ whenever there is no packet loss.
-It always increases as long as there is no packet loss.
+Basically, we should keep moving in the same direction when we measure a positive performance improvement $PIMP$ and change the direction otherwise.
+
+The behaviour of the current TCP is $CWND_i = CWND_{i-1} + MSS$ every RTT whenever there is no packet loss.
+It always increases $CWND$ as long as there is no packet loss.
 
 We suggest to update $CWND$ as $CWND_i = CWND_{i-1} + STAT_i*MSS$ where $STAT_i$ stands for state and can be 1 or -1.
 The $CWND$ increases when $STAT_i$ is positive and decreases when $STAT_i$ is negative.
 $STAT$ keeps the same value as long as there are performance improvements, and changes its value when there is a performance loss:  $STAT_i = SIGN(PIMP)*STAT_{i-1}$.
+The goal is to keep moving on the same direction along the horizontal axis of the figure while there is a performance improvement and change the direction as soon as we detect a performance loss.
 
 The following algorithm summarizes all the steps necessary to update $CWND$.
 \begin{algorithmic}
@@ -682,11 +690,11 @@ The following algorithm summarizes all the steps necessary to update $CWND$.
 \STATE $STAT_0\gets 1$ 
 \STATE Measure $T_0$ and $D_0$
 \STATE $i\gets 1$ 
-\COMMENT{The following loop is executed once every RTT}
-\WHILE{ no packet loss}
+\STATE /* The following loop is executed once every RTT */
+\WHILE{ no packet loss} 
     \STATE Measure $T_i$ and $D_i$
     \STATE Compute $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$
-    \STATE Compute $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$`
+    \STATE Compute $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$
     \STATE Compute $PIMP=T_{rv}-D_{rv}$
     \STATE Compute $STAT_i = SIGN(PIMP)*STAT_{i-1}$
     \STATE Compute $CWND_i = CWND_{i-1} + STAT_i*MSS$ 
