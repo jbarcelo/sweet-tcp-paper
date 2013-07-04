@@ -263,7 +263,7 @@ height \snellskip\kern-.5em&\multispan#2\hrulefill\cr}
 
 % *** SPECIALIZED LIST PACKAGES ***
 %
-%\usepackage{algorithmic}
+\usepackage{algorithmic}
 % algorithmic.sty was written by Peter Williams and Rogerio Brito.
 % This package provides an algorithmic environment fo describing algorithms.
 % You can use the algorithmic environment in-text or within a figure
@@ -660,11 +660,25 @@ We can use these properties to control whether TCP should increase or decrease t
 The behaviour of the current TCP every RTT is $CWND_i = CWND_{i-1} + MSS$ whenever there is no packet loss.
 It always increases as long as there is no packet loss.
 
-We suggest $CWND_i = CWND_{i-1} + STAT*MSS$ where $STAT$ stands for state and can be 1 or -1.
-The $CWND$ increases when $STAT$ is positive and decreases when $STAT$ is negative.
-$STAT$ is simply the sign of the previously defined performance improvement $STAT = SIGN(PIMP)$.
+We suggest $CWND_i = CWND_{i-1} + STAT*MSS$ where $STAT_i$ stands for state and can be 1 or -1.
+The $CWND$ increases when $STAT_i$ is positive and decreases when $STAT_i$ is negative.
+$STAT$ keeps the same value as long as there are performance improvements, and changes its value when there is a performance loss:  $STAT_i = SIGN(PIMP)*STAT_{i-1}$.
 
-
+\begin{algorithmic}
+\STATE $V\gets$ AllUnigramsInTraining($D$)
+\STATE $N\gets$ NumberOfTweets($D$)
+ \FORALL{$c \in C$}
+  \STATE $N_c \gets$ Number of tweets in Class $c$
+  \STATE \begin{equation}prior(c) = \frac{N_c}{N}\end{equation}
+  \STATE $Tweets_c \gets $All Tweets in class $c$
+  \FORALL{$t \in V$}
+    \STATE $T_ct$ = No. of times term $t$ appeared in $Tweets_c$
+  \ENDFOR
+  \FORALL{$t \in V$}
+    \STATE \begin{equation}prob[t][c] = \frac{T_ct}{\sum^{t'}T_ct'+ 1}\end{equation}
+  \ENDFOR
+\ENDFOR
+\end{algorithmic}
 
 
 \section{Conclusion}
