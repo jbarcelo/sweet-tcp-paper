@@ -482,7 +482,7 @@ height \snellskip\kern-.5em&\multispan#2\hrulefill\cr}
 
 
 \author{Name~Surname %~\IEEEmembership{Member,~IEEE,}
-        and~Name~Surname,~\IEEEmembership{Senior~Member,~IEEE}% <-this % stops a space
+%        %and~Name~Surname,~\IEEEmembership{Senior~Member,~IEEE}% <-this % stops a space
 \thanks{The authors are with ...
 }
 }
@@ -548,9 +548,9 @@ Permanently filling the buffer does not offer any performance advantage.
 On the contrary, permanently full buffers impair the operation of TCP causing excessive delays and timeouts.
 This problem is known in the literature as bufferbloat.
 In this paper, we make use of some of the insights developed by the community around the bufferbloat problem to propose a TCP congestion avoidance protocol that fills in the pipe but not the buffer.
-By continuously monitoring improvements of losses in terms of throughput and delay, Sweet TCP finds ans stabilizes around the optimum operation point that simultaneously maximizes the throughput and minimizes the delay.
+By continuously monitoring improvements and losses in terms of throughput and delay, Sweet TCP finds and stabilizes around the optimum operation point that simultaneously maximizes the throughput and minimizes the delay.
 A simple algorithm that adjusts the contention window is proposed.
-In contrast with traditional congestion avoidance behaviour, the proposed algorithm reduces the congestion window as soon as symptoms of bufferbloat are detected, and increases the congestion window as soon as bufferbloat disappears.
+In contrast with traditional congestion avoidance behaviour, the proposed algorithm reduces the congestion window as soon as symptoms of buffer build up are detected, and increases the congestion window as soon as the symptoms disappear.
 \end{abstract}
 % IEEEtran.cls defaults to using nonbold math in the Abstract.
 % This preserves the distinction between vectors and scalars. However,
@@ -606,18 +606,27 @@ TCP, congestion avoidance, bufferbloat, delay
 % You must have at least 2 lines in the paragraph with the drop letter
 % (should never be an issue)
 
-\IEEEPARstart{T}{his} is the first sentence.
-
-\section{Operating in TCP's Sweet Point}
-
+\IEEEPARstart{M}{any} Internet communications use the Transfer Control Protocol (TCP).
 Fig.~\ref{fig:delay-throughput-vs-flight} is a copy from \cite{gettys2011bdb} and explains the behaviour of TCP as a function of the number of packets in-flight.
-If the number of packets is too low, the link is not efficiently used.
+The number of packets in flight is closely related to the TCP congestion window ($CWND$) which limits the number of bytes in-flight.
+If the number of packets in-flight is too low, the link is not efficiently used.
 If it is too high, it fills up the buffer preceding the bottleneck link and increases the end-to-end delay.
 
-In the figure we can observe that the behaviour of TCP presents a sweet point in which both throughput and delay are maximised.
+In the figure we can observe that the behaviour of TCP presents a sweet point in which throughput is maximised and delay is minimised.
 If the current operation point is to the left of the optimal, the congestion window should be increased.
 If the current operation point is to the right of the optimal, the congestion window should be decreased.
 We try to devise a simple mechanism that can accomplish this goal.
+
+The assumption is that every round-trip-time (RTT) we have access to an estimation of the delay and throughput and should take a decision about whether the congestion window should be increased or decreased.
+Using a single sample of delay and throughput it is difficult to decide whether TCP is operating at the left or the right of the sweet point.
+Therefore the strategy is to move along the horizontal axis in the figure by increasing or decreasing the number of packets in flight, and then decide whether we are moving in the right direction or not.
+
+In a completely ideal situation in which the TCP behaviour was exactly as represented in the figure, an increase in throughput or a decrease in delay would mean a move in the right direction.
+A decrease in throughput or an increase in delay would mean a move in the wrong direction.
+In a real dynamic network, it is not realistic to expect a behaviour that exactly mimics the idealized Fig.~\ref{fig:delay-throughput-vs-flight}.
+For this reason we propose an algorithm that could be robust enough for a real environment.
+
+\section{Operating in TCP's Sweet Point}
 
 The current TCP behaviour is to increase the number of packets in-flight as long as no packet loss occurs.
 Roughly speaking, the number of packets in flight increases by one every RTT.
@@ -673,6 +682,7 @@ The following algorithm summarizes all the steps necessary to update $CWND$.
 \STATE $STAT_0\gets 1$ 
 \STATE Measure $T_0$ and $D_0$
 \STATE $i\gets 1$ 
+\COMMENT{The following loop is executed once every RTT}
 \WHILE{ no packet loss}
     \STATE Measure $T_i$ and $D_i$
     \STATE Compute $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$
