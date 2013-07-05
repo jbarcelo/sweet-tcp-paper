@@ -624,13 +624,13 @@ Therefore the strategy is to move along the horizontal axis in the figure by inc
 In a completely ideal situation in which the TCP behaviour was exactly as represented in the figure, an increase in throughput or a decrease in delay would mean a move in the right direction.
 A decrease in throughput or an increase in delay would mean a move in the wrong direction.
 In a real dynamic network, it is not realistic to expect a behaviour that exactly mimics the idealized Fig.~\ref{fig:delay-throughput-vs-flight}.
-For this reason we propose an algorithm that takes into account both delay and throughput for additional robustness.
+For this reason we propose an algorithm that takes into account the relative variation of both delay and throughput in an attempt to make the right decision even when the measurements are noisy.
 
 \section{Operating in TCP's Sweet Point}
 
 The current TCP behaviour is to increase the number of packets in-flight as long as no packet loss occurs.
 Roughly speaking, the number of packets in-flight increases by one every RTT.
-This means that, unless Random Early Detection is used, TCP has a tendency to fill the buffer that precedes the bottleneck link and therefore unnecessarily increase the delay of all the flows that traverse such link.
+This means that, unless Random Early Detection is used, TCP has a tendency to fill the buffer that precedes the bottleneck link and therefore to unnecessarily increase the delay of all the flows that traverse such link.
 
 The problem is that correctly configuring RED is not trivial.
 If RED is too aggressive, TCP slows down to a point in which the link is not efficiently used.
@@ -677,11 +677,11 @@ We can use these properties to control whether TCP should increase or decrease t
 Basically, we should keep moving in the same direction when we measure a positive performance improvement $PIMP$ and change the direction otherwise.
 
 The behaviour of the current TCP is $CWND_i = CWND_{i-1} + MSS$ every RTT whenever there is no packet loss.
-It always increases $CWND$ as long as there is no packet loss.
+TCP always increases $CWND$ as long as there is no packet loss.
 
 We suggest to update $CWND$ as $CWND_i = CWND_{i-1} + STAT_i*MSS$ where $STAT_i$ stands for state and can be 1 or -1.
 The $CWND$ increases when $STAT_i$ is positive and decreases when $STAT_i$ is negative.
-$STAT$ keeps the same value as long as there are performance improvements, and changes its value when there is a performance loss:  $STAT_i = SIGN(PIMP)*STAT_{i-1}$.
+$STAT$ keeps the same value as long as there are performance improvements, and changes its value when there is a performance loss:  $STAT_i = sign(PIMP)*STAT_{i-1}$, where $sign(\cdot)$ is the sign operator that is 1 for a positive value and -1 for a negative value .
 The goal is to keep moving on the same direction along the horizontal axis of the figure while there is a performance improvement and change the direction as soon as we detect a performance loss.
 
 The following algorithm summarizes all the steps necessary to update $CWND$.
@@ -696,7 +696,7 @@ The following algorithm summarizes all the steps necessary to update $CWND$.
     \STATE Compute $T_{rv}=\frac{T_i-T_{i-1}}{T_{i-1}}$
     \STATE Compute $D_{rv}=\frac{D_i-D_{i-1}}{D_{i-1}}$
     \STATE Compute $PIMP=T_{rv}-D_{rv}$
-    \STATE Compute $STAT_i = SIGN(PIMP)*STAT_{i-1}$
+    \STATE Compute $STAT_i = sign(PIMP)*STAT_{i-1}$
     \STATE Compute $CWND_i = CWND_{i-1} + STAT_i*MSS$ 
     \STATE $i\gets i + 1$
 \ENDWHILE
@@ -709,7 +709,7 @@ A negative performance improvement should move TCP to congestion avoidance.
 
 \section{Packet Loss}
 
-Sweet TCP should react to packet loss just like current TCP.
+Sweet TCP should react to packet loss just like current TCP implementations.
 The congestion window should be halved in the case of fast recovery and TCP should move back to the slow start in case of timeout.
 
 \section{Conclusion}
@@ -774,7 +774,7 @@ In order to decide when to increase or decrease the congestion window, TCP has t
 % use section* for acknowledgement
 \section*{Acknowledgment}
 
-Thanks to Adria Villalba for suggesting to move the operation of TCP to the sweet point.
+Thanks to Adria Villalba for suggesting that a possible solution for bufferbloat was to move the operation of TCP to the sweet point.
 
 
 % Can use something like this to put references on a page
